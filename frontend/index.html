@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phishing URL & Malicious Link Detector</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">AI-Powered Cyber Defense</div>
+      <h1>Phishing URL & Malicious Link Detector</h1>
+      <p class="subtitle">Extracts structural, lexical, and security features to detect malicious URLs using a trained Random Forest model.</p>
+    </header>
+
+    <main class="card">
+      <form id="url-form">
+        <label for="url-input">Enter Web Address (URL):</label>
+        <div class="input-group">
+          <input
+            type="text"
+            id="url-input"
+            placeholder="e.g. http://secure-login.paypal.com.account-update.ru/login.php"
+            required
+            autocomplete="off"
+          />
+          <button type="submit" id="check-btn">Inspect Link</button>
+        </div>
+      </form>
+
+      <!-- Quick test buttons for demonstration -->
+      <div class="sample-links">
+        <span>Try an example:</span>
+        <button type="button" class="btn-sample" onclick="setURL('https://www.google.com')">Safe: Google</button>
+        <button type="button" class="btn-sample" onclick="setURL('http://192.168.1.105/paypal/signin.html')">Malicious: IP Address</button>
+        <button type="button" class="btn-sample" onclick="setURL('http://secure-update-appleid.support-verify.com')">Malicious: Brand Spoof</button>
+      </div>
+
+      <!-- Loading Spinner -->
+      <div id="loading" class="hidden">
+        <div class="spinner"></div>
+        <p>Analyzing structural URL indicators...</p>
+      </div>
+
+      <!-- Result Card -->
+      <div id="result-box" class="result-box hidden">
+        <div class="result-header">
+          <span id="result-badge" class="result-badge">STATUS</span>
+          <span id="confidence-score" class="confidence-score">99.0% Confidence</span>
+        </div>
+        <p id="result-explanation" class="result-explanation"></p>
+
+        <!-- Feature Inspection Breakdown -->
+        <details class="feature-details">
+          <summary>View Extracted Feature Metrics</summary>
+          <div id="feature-grid" class="feature-grid"></div>
+        </details>
+      </div>
+    </main>
+
+    <footer>
+      <p>College Major/Mini Project &bull; Machine Learning Cyber Security System</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
