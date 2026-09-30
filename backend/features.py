@@ -58,12 +58,12 @@ def extract_features(url: str) -> dict:
     hostname_length = len(hostname)
     path_length = len(path)
 
-    # Subdomain calculation: strip 'www.' so standard sites have 0 subdomains
+    # Subdomain calculation: strip 'www.' so standard root domains are not penalized
     clean_host = hostname[4:] if hostname.startswith("www.") else hostname
     parts = clean_host.split(".")
     count_subdomains = max(0, len(parts) - 2) if len(parts) > 2 else 0
 
-    # Lexical counts on body only
+    # Lexical character counts on URL body
     body = re.sub(r"^https?://", "", url_clean, flags=re.IGNORECASE)
     body_clean = body[4:] if body.lower().startswith("www.") else body
 

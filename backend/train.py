@@ -1,7 +1,7 @@
 import os
+import random
 import joblib
 import pandas as pd
-import random
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
@@ -9,6 +9,9 @@ import features
 
 print("[1/5] Loading raw dataset...")
 dataset_file = os.path.join("dataset", "malicious_phish.csv")
+if not os.path.exists(dataset_file):
+    raise FileNotFoundError(f"Missing dataset at {dataset_file}")
+
 df = pd.read_csv(dataset_file)
 df.columns = [c.lower() for c in df.columns]
 
@@ -24,11 +27,12 @@ df['label_binary'] = df[label_col].astype(str).str.lower().apply(
 df_benign = df[df['label_binary'] == 0].copy()
 df_malicious = df[df['label_binary'] == 1].copy()
 
-# Inject standard root benign examples so the model learns that short root domains are safe
+# Inject standard root benign domains to eliminate root domain bias
 common_benign_roots = [
     "google.com", "youtube.com", "apple.com", "microsoft.com", "amazon.com",
     "wikipedia.org", "github.com", "linkedin.com", "reddit.com", "netflix.com",
-    "yahoo.com", "twitter.com", "instagram.com", "facebook.com", "bing.com"
+    "yahoo.com", "twitter.com", "instagram.com", "facebook.com", "bing.com",
+    "pinterest.com", "whatsapp.com"
 ] * 300
 
 df_extra = pd.DataFrame({
@@ -83,9 +87,10 @@ acc = accuracy_score(y_test, y_pred)
 print("\n" + "="*45)
 print(f" MODEL ACCURACY: {acc * 100:.2f}%")
 print("="*45)
-print(classification_report(y_test, y_pred, target_names=["Legitimate", "Phishing"]))
+print("\nClassification Report:\n", classification_report(y_test, y_pred, target_names=["Legitimate", "Phishing"]))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
 
 os.makedirs("models", exist_ok=True)
 model_path = os.path.join("models", "rf_model.pkl")
 joblib.dump(rf_model, model_path)
-print(f"\nModel re-saved to: {model_path}")
+print(f"\nModel successfully saved to: {model_path}")

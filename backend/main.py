@@ -26,7 +26,7 @@ if not os.path.exists(MODEL_PATH):
 
 model = joblib.load(MODEL_PATH)
 
-# Common top-level root domains (whitelist fallback)
+# Common top-level trusted root domains
 TRUSTED_DOMAINS = {
     "google.com", "youtube.com", "wikipedia.org", "amazon.com",
     "facebook.com", "twitter.com", "instagram.com", "linkedin.com",
@@ -54,7 +54,7 @@ def predict_url(payload: URLRequest):
     parsed = urlparse(raw_url if raw_url.startswith(("http://", "https://")) else "http://" + raw_url)
     host = (parsed.hostname or "").lower()
     
-    # Check if host or its registered domain ends with any trusted domain
+    # Tier 1: Check trusted authority domain (allows legitimate subdomains like in.pinterest.com or web.whatsapp.com)
     is_trusted = any(host == d or host.endswith("." + d) for d in TRUSTED_DOMAINS)
     if is_trusted and extracted["has_ip_address"] == 0 and extracted["has_suspicious_words"] == 0:
         return {
@@ -66,16 +66,16 @@ def predict_url(payload: URLRequest):
             "features": extracted
         }
 
-    # Machine Learning Inference
+    # Tier 2: Machine Learning Random Forest Inference
     df_features = pd.DataFrame([extracted], columns=features.FEATURE_NAMES)
     probabilities = model.predict_proba(df_features)[0]
     
-    prob_phishing = float(probabilities[1])
     prob_benign = float(probabilities[0])
+    prob_phishing = float(probabilities[1])
 
     # Zero-threat heuristic safeguard:
-    # If there are no suspicious tokens, no IP, no hyphens, and at most 1 subdomain,
-    # prevent borderline 50.9% decisions from triggering a false alarm
+    # If 0 IP, 0 suspicious words, 0 hyphens, 0 special characters, and <= 1 subdomain,
+    # prevent borderline ~50.9% splits from triggering a false alarm
     zero_threat_indicators = (
         extracted["has_ip_address"] == 0 and
         extracted["has_suspicious_words"] == 0 and
@@ -84,11 +84,11 @@ def predict_url(payload: URLRequest):
         extracted["count_subdomains"] <= 1
     )
 
-    # Use a solid 60% probability threshold for phishing classification
     if zero_threat_indicators:
         is_phish = False
         confidence = prob_benign * 100 if prob_benign > 0.5 else 90.0
     else:
+        # Calibrated 60% probability boundary for malicious links
         is_phish = prob_phishing >= 0.60
         confidence = (prob_phishing if is_phish else prob_benign) * 100
 

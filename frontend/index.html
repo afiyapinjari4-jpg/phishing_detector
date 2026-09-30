@@ -3,66 +3,706 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Phishing URL & Malicious Link Detector</title>
+  <title>PhishGuard | AI-Powered URL Security Scanner</title>
   <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
-  <div class="container">
-    <header>
-      <div class="badge">AI-Powered Cyber Defense</div>
-      <h1>Phishing URL & Malicious Link Detector</h1>
-      <p class="subtitle">Extracts structural, lexical, and security features to detect malicious URLs using a trained Random Forest model.</p>
-    </header>
-
-    <main class="card">
-      <form id="url-form">
-        <label for="url-input">Enter Web Address (URL):</label>
-        <div class="input-group">
-          <input
-            type="text"
-            id="url-input"
-            placeholder="e.g. http://secure-login.paypal.com.account-update.ru/login.php"
-            required
-            autocomplete="off"
-          />
-          <button type="submit" id="check-btn">Inspect Link</button>
+<body class="dark-theme">
+  <div class="app-layout">
+    
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-shield">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
         </div>
-      </form>
-
-      <!-- Quick test buttons for demonstration -->
-      <div class="sample-links">
-        <span>Try an example:</span>
-        <button type="button" class="btn-sample" onclick="setURL('https://www.google.com')">Safe: Google</button>
-        <button type="button" class="btn-sample" onclick="setURL('http://192.168.1.105/paypal/signin.html')">Malicious: IP Address</button>
-        <button type="button" class="btn-sample" onclick="setURL('http://secure-update-appleid.support-verify.com')">Malicious: Brand Spoof</button>
-      </div>
-
-      <!-- Loading Spinner -->
-      <div id="loading" class="hidden">
-        <div class="spinner"></div>
-        <p>Analyzing structural URL indicators...</p>
-      </div>
-
-      <!-- Result Card -->
-      <div id="result-box" class="result-box hidden">
-        <div class="result-header">
-          <span id="result-badge" class="result-badge">STATUS</span>
-          <span id="confidence-score" class="confidence-score">99.0% Confidence</span>
+        <div class="brand-text">
+          <h2>PhishGuard</h2>
+          <span>AI-Powered URL Security Scanner</span>
         </div>
-        <p id="result-explanation" class="result-explanation"></p>
-
-        <!-- Feature Inspection Breakdown -->
-        <details class="feature-details">
-          <summary>View Extracted Feature Metrics</summary>
-          <div id="feature-grid" class="feature-grid"></div>
-        </details>
       </div>
+
+      <nav class="nav-menu">
+        <button class="nav-item active" data-tab="dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          Dashboard
+        </button>
+        <button class="nav-item" data-tab="scan-url">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Scan URL
+        </button>
+        <button class="nav-item" data-tab="scan-history">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Scan History
+        </button>
+        <button class="nav-item" data-tab="model-info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+          Model Info
+        </button>
+        <button class="nav-item" data-tab="analytics">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
+        </button>
+        <button class="nav-item" data-tab="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </button>
+        <button class="nav-item" data-tab="about">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          About
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="system-status">
+          <span class="status-indicator"></span>
+          <div class="status-details">
+            <span class="status-title">System Online</span>
+            <span class="status-sub" id="backend-status-text">Backend API: Running</span>
+            <span class="status-sub" id="backend-ping">Response Time: 12ms</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-wrapper">
+      
+      <!-- CLEAN SOC HEADER -->
+      <header class="topbar">
+        <div class="topbar-breadcrumb">
+          <span class="breadcrumb-root">PhishGuard Security Gateway</span>
+          <span class="breadcrumb-sep">/</span>
+          <span class="breadcrumb-active" id="current-view-title">Command Center Overview</span>
+        </div>
+
+        <div class="topbar-soc-telemetry">
+          <div class="soc-stat-pill">
+            <span class="pulse-indicator"></span>
+            <span class="soc-lbl">ENGINE:</span>
+            <strong class="soc-val" id="soc-status">ACTIVE DEFENSE</strong>
+          </div>
+          <div class="soc-stat-pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span class="soc-clock-mono" id="live-cyber-clock">--:--:--</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- SCROLLABLE CONTENT VIEW -->
+      <div class="content-scroll">
+        
+        <!-- ==================== VIEW 1: DASHBOARD ==================== -->
+        <section id="view-dashboard" class="tab-view active">
+          
+          <!-- WELCOME HERO BANNER -->
+          <div class="welcome-banner">
+            <div class="banner-content">
+              <div class="banner-title-row">
+                <div class="banner-shield-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <div>
+                  <h1>Welcome to PhishGuard</h1>
+                  <p>Autonomous AI Security Engine. Inspect links, evaluate indicators, and mitigate zero-day threats.</p>
+                </div>
+              </div>
+
+              <!-- Quick Launch Presets -->
+              <div class="quick-test-row">
+                <span class="qt-label">Quick Launch:</span>
+                <button class="pill-btn pill-blue" data-test="https://www.google.com">Google</button>
+                <button class="pill-btn pill-blue" data-test="https://en.wikipedia.org/wiki/Machine_learning">Wikipedia</button>
+                <button class="pill-btn pill-green" data-test="https://web.whatsapp.com/">WhatsApp</button>
+                <button class="pill-btn pill-purple" data-test="https://in.pinterest.com/">Pinterest</button>
+                <button class="pill-btn pill-red" data-test="http://192.168.1.105/paypal/login">IP Attack</button>
+                <button class="pill-btn pill-purple-alt" data-test="http://secure-login.paypal.com.account-update.ru/login.php">Suspicious URL</button>
+              </div>
+            </div>
+
+            <div class="banner-graphic">
+              <div class="cyber-shield-glow"></div>
+            </div>
+          </div>
+
+          <!-- 4 STATS CARDS -->
+          <div class="stats-grid-4">
+            <div class="stat-card">
+              <div class="stat-icon-wrap icon-cyan">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </div>
+              <div class="stat-info">
+                <h3>30,000</h3>
+                <span class="stat-label">Training Samples</span>
+                <span class="stat-badge-sub">Balanced Dataset</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon-wrap icon-purple">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </div>
+              <div class="stat-info">
+                <h3>17</h3>
+                <span class="stat-label">Features</span>
+                <span class="stat-badge-sub">Extracted from URL</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon-wrap icon-blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              </div>
+              <div class="stat-info">
+                <h3>94.27%</h3>
+                <span class="stat-label">Model Accuracy</span>
+                <span class="stat-badge-sub">Random Forest</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon-wrap icon-amber">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div class="stat-info">
+                <h3>6,000</h3>
+                <span class="stat-label">Test Samples</span>
+                <span class="stat-badge-sub">Unseen Data</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- DASHBOARD 3-PANEL TRIO GRID -->
+          <div class="dashboard-trio-grid">
+            
+            <!-- PANEL 1: Threat Ratio & Severity -->
+            <div class="panel card-ratio-panel">
+              <div class="panel-header">
+                <h2>Threat Ratio & Severity Posture</h2>
+                <span class="badge-status-live" id="posture-badge">STATUS: NOMINAL</span>
+              </div>
+              
+              <div class="donut-centered-container">
+                <div class="donut-canvas-wrap-large">
+                  <canvas id="threatOverviewDonut"></canvas>
+                  <div class="donut-inner-text-large">
+                    <span class="inner-pct">80%</span>
+                    <span class="inner-lbl">Safe Ratio</span>
+                  </div>
+                </div>
+
+                <div class="threat-ratio-stats">
+                  <div class="ratio-stat-box box-legit">
+                    <span class="rs-label">Legitimate Verified</span>
+                    <strong class="rs-count" id="dash-count-legit">0</strong>
+                    <span class="rs-desc">Standard structure</span>
+                  </div>
+                  <div class="ratio-stat-box box-mal">
+                    <span class="rs-label">Malicious Intercepted</span>
+                    <strong class="rs-count" id="dash-count-mal">0</strong>
+                    <span class="rs-desc">Red flag triggers</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="severity-meter-wrap">
+                <div class="flex-between mb-6">
+                  <span class="sec-label">Active Session Threat Level</span>
+                  <strong class="sec-pct" id="severity-val">LOW (20%)</strong>
+                </div>
+                <div class="meter-track">
+                  <div class="meter-bar" id="severity-bar" style="width: 20%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PANEL 2: Dynamic Attack Vector Radar -->
+            <div class="panel card-radar-panel">
+              <div class="panel-header">
+                <h2>Attack Vector Radar</h2>
+                <span class="radar-tag">Heuristic Dimension</span>
+              </div>
+              <div class="radar-chart-container">
+                <canvas id="attackVectorRadar"></canvas>
+              </div>
+              <div class="radar-footer-meta">
+                <span>Evaluates parameter stuffing, host obfuscation, and keyword triggers.</span>
+              </div>
+            </div>
+
+            <!-- PANEL 3: Scan a URL Now Card -->
+            <div class="panel cta-scan-card-classic">
+              <div class="hacker-avatar-container">
+                <svg class="hacker-avatar-vector" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Hood Outline -->
+                  <path d="M50 14C33 14 24 26 24 45C24 60 27 75 20 84C27 82 34 81 37 77C38 69 41 63 50 63C59 63 62 69 63 77C66 81 73 82 80 84C73 75 76 60 76 45C76 26 67 14 50 14Z" fill="#0d1b2a" stroke="#0077b6" stroke-width="2"/>
+                  <!-- Inner Shadow / Depth -->
+                  <path d="M50 20C38 20 31 30 31 46C31 59 34 68 50 68C66 68 69 59 69 46C69 30 62 20 50 20Z" fill="#03071e"/>
+                  <!-- Glowing Cyan Visor & Mask -->
+                  <path d="M37 45L45 52H55L63 45L59 40H41L37 45Z" fill="#00b4d8"/>
+                  <path d="M44 56H56L50 62L44 56Z" fill="#0077b6"/>
+                  <!-- Cyber Aura Lines -->
+                  <path d="M18 42C18 30 25 21 35 17" stroke="#00b4d8" stroke-width="1.8" stroke-linecap="round" opacity="0.8"/>
+                  <path d="M82 42C82 30 75 21 65 17" stroke="#00b4d8" stroke-width="1.8" stroke-linecap="round" opacity="0.8"/>
+                  <circle cx="18" cy="45" r="2" fill="#00b4d8"/>
+                  <circle cx="82" cy="45" r="2" fill="#00b4d8"/>
+                </svg>
+              </div>
+
+              <h3>Scan a URL Now</h3>
+              <p>Paste any link and get instant AI-powered threat analysis.</p>
+
+              <button class="btn-scan-blue" id="dash-scan-now-btn">
+                Scan URL &nbsp;&rarr;
+              </button>
+            </div>
+
+          </div>
+        </section>
+
+
+        <!-- ==================== VIEW 2: SCAN URL ==================== -->
+        <section id="view-scan-url" class="tab-view">
+          <div class="view-header">
+            <h1>Interactive Threat Inspector</h1>
+            <p>Test individual URLs against our dual-layer Heuristic and Ensemble Machine Learning Pipeline.</p>
+          </div>
+
+          <div class="panel inspector-box">
+            <div class="input-form-row">
+              <input type="text" id="inspector-url-input" placeholder="https://example.com/login" />
+              <button class="btn-scan-primary" id="inspector-scan-btn">Inspect Link</button>
+            </div>
+
+            <div class="quick-chips">
+              <span>Try Presets:</span>
+              <button class="chip-btn" data-test="https://www.google.com">Safe: Google</button>
+              <button class="chip-btn" data-test="https://en.wikipedia.org/wiki/Machine_learning">Safe: Wikipedia</button>
+              <button class="chip-btn" data-test="http://192.168.1.105/paypal/login">Phishing: Raw IP</button>
+              <button class="chip-btn" data-test="http://secure-login.paypal.com.account-update.ru/login.php">Phishing: Spoofed Subdomain</button>
+            </div>
+          </div>
+
+          <div id="inspector-result-panel" class="panel result-panel-hidden"></div>
+        </section>
+
+
+        <!-- ==================== VIEW 3: SCAN HISTORY ==================== -->
+        <section id="view-scan-history" class="tab-view">
+          <div class="view-header flex-between">
+            <div>
+              <h1>Full Scan Log & Audit Trail</h1>
+              <p>Persistent record of links analyzed during this active session.</p>
+            </div>
+            <button class="btn-secondary" id="clear-history-btn">Clear History</button>
+          </div>
+
+          <div class="panel">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>URL</th>
+                    <th>Result</th>
+                    <th>Confidence</th>
+                    <th>Detection Tier</th>
+                    <th>Timestamp</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="full-history-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ==================== VIEW 4: MODEL INFO ==================== -->
+        <section id="view-model-info" class="tab-view">
+          <div class="view-header">
+            <h1>Model Information</h1>
+            <p>Details about the machine learning model and training process.</p>
+          </div>
+
+          <div class="model-info-grid">
+            <div class="panel model-algo-card">
+              <div class="algo-top">
+                <div class="brain-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4v1a4 4 0 0 0-4 4 4 4 0 0 0 2 3.5V17a4 4 0 0 0 4 4h4a4 4 0 0 0 4-4v-2.5a4 4 0 0 0 2-3.5 4 4 0 0 0-4-4V6a4 4 0 0 0-4-4z"/></svg>
+                </div>
+                <div>
+                  <div class="flex-align gap-8">
+                    <h2>Random Forest Classifier</h2>
+                    <span class="active-badge">Active</span>
+                  </div>
+                  <p class="model-desc">Ensemble learning method using multiple decision trees for higher accuracy and robustness.</p>
+                </div>
+              </div>
+
+              <div class="algo-meta-row">
+                <div class="meta-item">
+                  <span class="meta-lbl">Algorithm</span>
+                  <span class="meta-val">Random Forest</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-lbl">Training Samples</span>
+                  <span class="meta-val">30,000</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-lbl">Test Samples</span>
+                  <span class="meta-val">6,000</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-lbl">Features</span>
+                  <span class="meta-val">17</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel model-rings-card">
+              <div class="panel-header">
+                <h2>Performance Metrics</h2>
+              </div>
+              <div class="rings-flex">
+                <div class="metric-circle-item">
+                  <div class="circle-gauge gauge-cyan"><span>94.27%</span></div>
+                  <span class="gauge-lbl">Accuracy</span>
+                </div>
+                <div class="metric-circle-item">
+                  <div class="circle-gauge gauge-blue"><span>0.95</span></div>
+                  <span class="gauge-lbl">Precision</span>
+                </div>
+                <div class="metric-circle-item">
+                  <div class="circle-gauge gauge-purple"><span>0.94</span></div>
+                  <span class="gauge-lbl">Recall</span>
+                </div>
+                <div class="metric-circle-item">
+                  <div class="circle-gauge gauge-teal"><span>0.94</span></div>
+                  <span class="gauge-lbl">F1-Score</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="model-metrics-grid mt-20">
+            <div class="panel">
+              <div class="panel-header">
+                <h2>Class-wise Performance</h2>
+              </div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Class</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1-Score</th>
+                    <th>Support</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Legitimate (0)</strong></td>
+                    <td>0.95</td>
+                    <td>0.94</td>
+                    <td>0.94</td>
+                    <td>3,000</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Phishing (1)</strong></td>
+                    <td>0.94</td>
+                    <td>0.95</td>
+                    <td>0.94</td>
+                    <td>3,000</td>
+                  </tr>
+                  <tr class="highlight-row">
+                    <td><strong>Overall</strong></td>
+                    <td><strong>0.94</strong></td>
+                    <td><strong>0.94</strong></td>
+                    <td><strong>0.94</strong></td>
+                    <td><strong>6,000</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <h2>Confusion Matrix</h2>
+              </div>
+              <div class="cm-table-wrap">
+                <div class="cm-headers">
+                  <div class="cm-headers-empty"></div>
+                  <div class="cm-header-pill">Predicted 0 (Legit)</div>
+                  <div class="cm-header-pill">Predicted 1 (Phish)</div>
+                </div>
+                <div class="cm-row">
+                  <span class="cm-label">Actual 0</span>
+                  <div class="cm-cell cm-tn">2,816</div>
+                  <div class="cm-cell cm-fp">184</div>
+                </div>
+                <div class="cm-row">
+                  <span class="cm-label">Actual 1</span>
+                  <div class="cm-cell cm-fn">160</div>
+                  <div class="cm-cell cm-tp">2,840</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- REFINED BOTTOM SECTION: ARCHITECTURAL PIPELINE -->
+          <div class="model-bottom-grid mt-20">
+            <div class="panel pipeline-flow-panel">
+              <div class="panel-header">
+                <h2>Autonomous Decision Pipeline</h2>
+                <span class="badge-status-live">Latency: &lt; 3.2ms</span>
+              </div>
+              
+              <div class="modern-pipeline-grid">
+                <div class="pipe-node">
+                  <div class="pipe-tag">STAGE 01</div>
+                  <div class="pipe-title">Raw URL Ingestion</div>
+                  <div class="pipe-sub">Sanitization &amp; normalization</div>
+                </div>
+                <div class="pipe-arrow">&rarr;</div>
+
+                <div class="pipe-node">
+                  <div class="pipe-tag">STAGE 02</div>
+                  <div class="pipe-title">17-D Feature Extractor</div>
+                  <div class="pipe-sub">Lexical &amp; structural metrics</div>
+                </div>
+                <div class="pipe-arrow">&rarr;</div>
+
+                <div class="pipe-node">
+                  <div class="pipe-tag">STAGE 03</div>
+                  <div class="pipe-title">Tier-1 Authority Bypass</div>
+                  <div class="pipe-sub">Root domain trust lookup</div>
+                </div>
+                <div class="pipe-arrow">&rarr;</div>
+
+                <div class="pipe-node pipe-node-accent">
+                  <div class="pipe-tag">STAGE 04</div>
+                  <div class="pipe-title">Random Forest Inference</div>
+                  <div class="pipe-sub">&gt; 60% threshold probability</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel highlight-box-green">
+              <div class="shield-check-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+              <div>
+                <h3>Offline Security Guarantee</h3>
+                <p>Pure structural token heuristics and locally trained ensemble trees. Zero network socket leaks, zero telemetry forwarding, and zero external threat API dependencies.</p>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+
+        <!-- ==================== VIEW 5: ANALYTICS ==================== -->
+        <section id="view-analytics" class="tab-view">
+          <div class="view-header flex-between">
+            <div>
+              <h1>Analytics Dashboard</h1>
+              <p>Insights, trends and statistics about URL scans and model performance.</p>
+            </div>
+            <div class="filter-dropdown">
+              <span>📅 Live Active Session</span>
+            </div>
+          </div>
+
+          <div class="stats-grid-4">
+            <div class="stat-card">
+              <div class="stat-icon-wrap icon-cyan">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </div>
+              <div class="stat-info">
+                <h3>5</h3>
+                <span class="stat-label">Total Scans</span>
+                <span class="stat-badge-green">Dynamic session</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon-wrap icon-red">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div class="stat-info">
+                <h3>2</h3>
+                <span class="stat-label">Malicious Detected</span>
+                <span class="stat-badge-red">40% of total</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon-wrap icon-blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+              <div class="stat-info">
+                <h3>3</h3>
+                <span class="stat-label">Legitimate Detected</span>
+                <span class="stat-badge-cyan">60% of total</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon-wrap icon-purple">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              </div>
+              <div class="stat-info">
+                <h3>94.27%</h3>
+                <span class="stat-label">Model Accuracy</span>
+                <span class="stat-badge-purple">On test data</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="analytics-charts-grid mt-20">
+            <div class="panel">
+              <div class="panel-header flex-between">
+                <h2>Scan Results Trend</h2>
+                <div class="chart-badges">
+                  <span class="dot legit"></span> Legitimate
+                  <span class="dot mal ml-8"></span> Malicious
+                </div>
+              </div>
+              <div class="chart-height-240">
+                <canvas id="scanResultsTrendChart"></canvas>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <h2>Top Threat Indicators</h2>
+              </div>
+              <div class="donut-threat-row">
+                <div class="donut-threat-canvas-wrap">
+                  <canvas id="topThreatDonutChart"></canvas>
+                  <div class="donut-inner-threat">
+                    <strong>2</strong>
+                    <span>Malicious URLs</span>
+                  </div>
+                </div>
+                <div class="threat-legend-list" id="threat-legend-container">
+                  <div><span class="sq sq-cyan"></span> Suspicious Words <strong id="lbl-threat-words">0%</strong></div>
+                  <div><span class="sq sq-blue"></span> Hyphens <strong id="lbl-threat-hyphens">0%</strong></div>
+                  <div><span class="sq sq-red"></span> IP Address <strong id="lbl-threat-ip">0%</strong></div>
+                  <div><span class="sq sq-orange"></span> Shortened URL <strong id="lbl-threat-short">0%</strong></div>
+                  <div><span class="sq sq-purple"></span> Special Characters <strong id="lbl-threat-special">0%</strong></div>
+                  <div><span class="sq sq-gray"></span> URL Length (>40) <strong id="lbl-threat-length">0%</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="analytics-charts-grid mt-20">
+            <div class="panel">
+              <div class="panel-header flex-between">
+                <h2>Model Performance</h2>
+                <div class="chart-badges">
+                  <span class="dot bg-blue"></span> Precision
+                  <span class="dot bg-cyan ml-8"></span> Recall
+                  <span class="dot bg-purple ml-8"></span> F1-Score
+                </div>
+              </div>
+              <div class="chart-height-240">
+                <canvas id="modelPerfBarChart"></canvas>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <h2>Feature Contribution (Top 5)</h2>
+              </div>
+              <div class="bar-contrib-list"></div>
+            </div>
+          </div>
+
+        </section>
+
+
+        <!-- ==================== VIEW 6: SETTINGS ==================== -->
+        <section id="view-settings" class="tab-view">
+          <div class="view-header">
+            <h1>Application Configuration</h1>
+            <p>Customize detection thresholds, local API ports, and inspection telemetry.</p>
+          </div>
+          <div class="panel max-w-700">
+            <div class="setting-item">
+              <div>
+                <h4>FastAPI Endpoint URL</h4>
+                <p>Host URL for REST inference queries</p>
+              </div>
+              <input type="text" id="setting-api-url" class="setting-input" value="http://127.0.0.1:8000" />
+            </div>
+            <div class="setting-item mt-16">
+              <div>
+                <h4>Decision Confidence Threshold</h4>
+                <p>Minimum probability required to classify a link as malicious</p>
+              </div>
+              <input type="number" id="setting-threshold" class="setting-input-small" value="60" min="50" max="95" />
+            </div>
+            <div class="setting-item mt-16">
+              <div>
+                <h4>Enable Tier-1 Whitelist Checking</h4>
+                <p>Bypasses ML inference for known high-authority domains</p>
+              </div>
+              <input type="checkbox" checked disabled />
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ==================== VIEW 7: ABOUT ==================== -->
+        <section id="view-about" class="tab-view">
+          <div class="view-header">
+            <h1>About PhishGuard Project</h1>
+            <p>Machine Learning Major Project — Phishing URL & Malicious Link Detection</p>
+          </div>
+          <div class="panel max-w-800">
+            <h3 class="mb-10">Project Defense Summary</h3>
+            <p class="leading-relaxed">PhishGuard is an autonomous URL cybersecurity analyzer built to detect zero-day phishing links using tabular feature engineering and an ensemble Random Forest classifier. By parsing 17 statistical, structural, and lexical properties directly from raw URL strings, the model flags malicious campaigns without costly external threat subscriptions or content web-scraping.</p>
+            <div class="about-grid mt-20">
+              <div class="about-card">
+                <strong>Machine Learning</strong>
+                <span>Random Forest (100 Trees)</span>
+              </div>
+              <div class="about-card">
+                <strong>Backend Framework</strong>
+                <span>FastAPI / Uvicorn</span>
+              </div>
+              <div class="about-card">
+                <strong>Dataset Benchmark</strong>
+                <span>Kaggle Malicious URLs (30k balanced)</span>
+              </div>
+              <div class="about-card">
+                <strong>Model Accuracy</strong>
+                <span>94.27% Verified Testing Score</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- FOOTER -->
+      <footer class="app-footer">
+        <div class="footer-left">
+          <strong>PhishGuard</strong> &nbsp;|&nbsp; Machine Learning for a Safer Internet
+        </div>
+        <div class="footer-right">
+          Version 1.0.0 &nbsp;|&nbsp; Built with ❤️ using FastAPI, Scikit-Learn & JavaScript
+        </div>
+      </footer>
+
     </main>
-
-    <footer>
-      <p>College Major/Mini Project &bull; Machine Learning Cyber Security System</p>
-    </footer>
   </div>
 
   <script src="script.js"></script>
